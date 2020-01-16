@@ -1,4 +1,4 @@
-Licence: GPL
+License: GPL
 
 Usage:
 ```
@@ -21,4 +21,4 @@ options:
 
 How to build?
 
-Install mbedtls and lz4, then run make
+Install mbedtls and lz4 then run make
