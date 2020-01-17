@@ -2,7 +2,7 @@ License: GPL
 
 Usage:
 ```
-usage: sbox -{cxelth}[snb0..9] archive [path]
+usage: sbox -{cxelthp}[snb0..9] [password] archive [path]
 
 version: 1.0.16
 
@@ -16,6 +16,7 @@ options:
   -s    skip additional info
   -n    turn off lz4 compression
   -b    use best compression ratio
+  -p    use password protection
   -0..9 preset compression ratio
 ```
 

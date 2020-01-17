@@ -9,7 +9,7 @@
  */
 static void show_usage ( void )
 {
-    fprintf ( stderr, "usage: sbox -{cxelth}[snb0..9] archive [path]\n"
+    fprintf ( stderr, "usage: sbox -{cxelthp}[snb0..9] [password] archive [path]\n"
         "\n"
         "version: " sbox_VERSION "\n"
         "\n"
@@ -22,7 +22,9 @@ static void show_usage ( void )
         "  -h    show help message\n"
         "  -s    skip additional info\n"
         "  -n    turn off lz4 compression\n"
-        "  -b    use best compression ratio\n" "  -0..9 preset compression ratio\n" "\n" );
+        "  -b    use best compression ratio\n"
+        "  -p    use password protection\n"
+        "  -0..9 preset compression ratio\n" "\n" );
 }
 
 /**
