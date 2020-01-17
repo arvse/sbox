@@ -73,11 +73,6 @@ static ssize_t io_aes_read ( struct io_stream *io, void *data, size_t len )
     unsigned char encrypted[CHUNK];
     unsigned char peekarea[AES256_BLOCKLEN];
 
-    if ( context->eof )
-    {
-        return 0;
-    }
-
     if ( ( limit = sizeof ( context->unconsumed ) - context->u_len ) % AES256_BLOCKLEN )
     {
         limit -= limit % AES256_BLOCKLEN;
@@ -98,11 +93,6 @@ static ssize_t io_aes_read ( struct io_stream *io, void *data, size_t len )
         return -1;
     }
 
-    if ( peeklen < AES256_BLOCKLEN && context->u_len < AES256_BLOCKLEN - context->unaligned )
-    {
-        context->eof = 1;
-    }
-
     if ( mbedtls_aes_crypt_cbc ( &context->aes, MBEDTLS_AES_DECRYPT, aux, context->iv, encrypted,
             context->unconsumed + context->u_len ) != 0 )
     {
@@ -111,14 +101,21 @@ static ssize_t io_aes_read ( struct io_stream *io, void *data, size_t len )
 
     context->u_len += aux;
 
-    if ( context->eof )
+    if ( peeklen < AES256_BLOCKLEN )
     {
-        context->u_len -= AES256_BLOCKLEN - context->unaligned;
+        context->eof = 1;
     }
 
-    if ( len > context->u_len )
+    limit = context->u_len;
+
+    if ( context->eof )
     {
-        len = context->u_len;
+        limit -= AES256_BLOCKLEN - context->unaligned;
+    }
+
+    if ( len > limit )
+    {
+        len = limit;
     }
 
     memcpy ( data, context->unconsumed, len );
