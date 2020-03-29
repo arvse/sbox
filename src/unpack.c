@@ -367,7 +367,7 @@ static int sbox_unpack_archive_load ( struct header_t *header, struct ar_istream
     free_files_tree ( root, 0 );
 
     /* Validate archive checksum if needed */
-    if ( !status )
+    if ( !status && ~options & OPTION_LISTONLY)
     {
         if ( ( verstatus = istream->verify ( istream ) ) == 1 )
         {

@@ -23,8 +23,7 @@ static void show_usage ( void )
         "  -s    skip additional info\n"
         "  -n    turn off lz4 compression\n"
         "  -b    use best compression ratio\n"
-        "  -p    use password protection\n"
-        "  -0..9 preset compression ratio\n" "\n" );
+        "  -p    use password protection\n" "  -0..9 preset compression ratio\n" "\n" );
 }
 
 /**
