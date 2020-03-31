@@ -7,6 +7,10 @@
 
 #ifdef ENABLE_LZ4
 
+#ifndef LZ4F_HEADER_SIZE_MAX
+#define LZ4F_HEADER_SIZE_MAX 15
+#endif
+
 /**
  * LZ4 capable stream structure
  */
@@ -251,7 +255,7 @@ struct ar_ostream *lz4_ostream_open ( struct io_stream *io, int level )
     struct lz4_stream_context_t *context;
     LZ4F_preferences_t lz4_prefs = {
         {LZ4F_max256KB, LZ4F_blockLinked, LZ4F_noContentChecksum, LZ4F_frame,
-            0 /* unknown content size */ , 0 /* no dictID */ , LZ4F_noBlockChecksum},
+            0 /* unknown content size */ , 0 /* no dictID */ , /* LZ4F_noBlockChecksum */ 0},
         level,  /* compression level; 0 == default */
         0,      /* autoflush */
         0,      /* favor decompression speed */
