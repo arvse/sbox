@@ -2,7 +2,7 @@ License: GPL
 
 Usage:
 ```
-usage: sbox -{cxelthp}[snb0..9] [password] archive [path]
+usage: sbox -{cxelthp}[snb0..9] [stdin|password] archive [path]
 
 version: 1.0.16
 

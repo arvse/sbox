@@ -9,7 +9,7 @@
  */
 static void show_usage ( void )
 {
-    fprintf ( stderr, "usage: sbox -{cxelthp}[snb0..9] [password] archive [path]\n"
+    fprintf ( stderr, "usage: sbox -{cxelthp}[snb0..9] [stdin|password] archive [path]\n"
         "\n"
         "version: " sbox_VERSION "\n"
         "\n"
@@ -114,7 +114,9 @@ int main ( int argc, char *argv[] )
     int flag_s;
     int flag_n;
     int flag_p;
+    ssize_t len;
     const char *password = NULL;
+    char password_buf[256];
 
     /* Validate arguments count */
     if ( argc < 3 )
@@ -225,6 +227,19 @@ int main ( int argc, char *argv[] )
             return 1;
         }
         password = argv[2];
+        
+        if (!strcmp(password, "stdin")) {
+            printf("password?\n");
+            if ((len = read(0, password_buf, sizeof(password_buf) -1)) <= 0) {
+                fprintf(stderr, "failed to read password\n");
+                return 1;
+            }
+            if (len > 0 && password_buf[len-1] == '\n') {
+                len--;
+            }
+            password_buf[len] = '\0';
+            password=password_buf;
+        }
 
         if ( !check_password ( password ) )
         {
