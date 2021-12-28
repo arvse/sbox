@@ -88,9 +88,12 @@ static ssize_t io_aes_read ( struct io_stream *io, void *data, size_t len )
         return -1;
     }
 
-    if ( peeklen && lseek ( context->fd, -peeklen, SEEK_CUR ) < 0 )
+    if (peeklen)
     {
-        return -1;
+        if ( lseek ( context->fd, -peeklen, SEEK_CUR ) < 0 )
+        {
+            return -1;
+        }
     }
 
     if ( mbedtls_aes_crypt_cbc ( &context->aes, MBEDTLS_AES_DECRYPT, aux, context->iv, encrypted,
@@ -110,6 +113,10 @@ static ssize_t io_aes_read ( struct io_stream *io, void *data, size_t len )
 
     if ( context->eof )
     {
+        if (AES256_BLOCKLEN - context->unaligned > limit)
+        {
+            return -1;
+        }
         limit -= AES256_BLOCKLEN - context->unaligned;
     }
 
@@ -171,8 +178,8 @@ static int io_aes_write ( struct io_stream *io, const void *data, size_t len )
     aligned = context->u_len - context->u_len % AES256_BLOCKLEN;
 
     if ( mbedtls_aes_crypt_cbc ( &context->aes, MBEDTLS_AES_ENCRYPT, aligned, context->iv,
-            context->unconsumed, encrypted ) != 0
-        || write_complete ( context->fd, encrypted, aligned ) < 0 )
+            context->unconsumed, encrypted ) != 0 ||
+ write_complete ( context->fd, encrypted, aligned ) < 0 )
     {
         return -1;
     }
@@ -226,12 +233,12 @@ static int io_aes_flush ( struct io_stream *io )
     memcpy ( plaintext, context->unconsumed, context->u_len );
 
     if ( mbedtls_aes_crypt_cbc ( &context->aes, MBEDTLS_AES_ENCRYPT, AES256_BLOCKLEN, context->iv,
-            plaintext, encrypted ) != 0
-        || write_complete ( context->fd, encrypted, AES256_BLOCKLEN ) < 0
-        || lseek ( context->fd, 0, SEEK_SET )
-        || write_complete ( context->fd, context->salt, sizeof ( context->salt ) ) < 0
-        || mbedtls_md_hmac_finish ( &context->md_ctx, context->hmac ) != 0
-        || write_complete ( context->fd, context->hmac, sizeof ( context->hmac ) ) < 0 )
+            plaintext, encrypted ) != 0 ||
+ write_complete ( context->fd, encrypted, AES256_BLOCKLEN ) < 0 ||
+ lseek ( context->fd, 0, SEEK_SET ) ||
+ write_complete ( context->fd, context->salt, sizeof ( context->salt ) ) < 0 ||
+ mbedtls_md_hmac_finish ( &context->md_ctx, context->hmac ) != 0 ||
+ write_complete ( context->fd, context->hmac, sizeof ( context->hmac ) ) < 0 )
     {
         return -1;
     }
@@ -291,9 +298,9 @@ struct io_stream *io_aes_istream_new ( int fd, const char *password )
     context->eof = 0;
     context->u_len = 0;
 
-    if ( read_complete ( context->fd, context->salt, sizeof ( context->salt ) ) < 0
-        || read_complete ( context->fd, context->hmac, sizeof ( context->hmac ) ) < 0
-        || read_complete ( context->fd, context->iv, sizeof ( context->iv ) ) < 0 )
+    if ( read_complete ( context->fd, context->salt, sizeof ( context->salt ) ) < 0 ||
+ read_complete ( context->fd, context->hmac, sizeof ( context->hmac ) ) < 0 ||
+ read_complete ( context->fd, context->iv, sizeof ( context->iv ) ) < 0 )
     {
         free ( context );
         return NULL;
@@ -322,8 +329,8 @@ struct io_stream *io_aes_istream_new ( int fd, const char *password )
 
     mbedtls_md_init ( &context->md_ctx );
 
-    if ( mbedtls_md_setup ( &context->md_ctx, mbedtls_md_info_from_type ( md_type ), 1 ) != 0
-        || mbedtls_md_hmac_starts ( &context->md_ctx, key, sizeof ( key ) ) != 0 )
+    if ( mbedtls_md_setup ( &context->md_ctx, mbedtls_md_info_from_type ( md_type ), 1 ) != 0 ||
+ mbedtls_md_hmac_starts ( &context->md_ctx, key, sizeof ( key ) ) != 0 )
     {
         memset ( key, '\0', sizeof ( key ) );
         memset ( &context->aes, '\0', sizeof ( context->aes ) );
@@ -371,8 +378,8 @@ struct io_stream *io_aes_ostream_new ( int fd, const char *password )
     context->eof = 0;
     context->u_len = 0;
 
-    if ( random_bytes ( context->salt, sizeof ( context->salt ) ) < 0
-        || random_bytes ( context->iv, sizeof ( context->iv ) ) < 0 )
+    if ( random_bytes ( context->salt, sizeof ( context->salt ) ) < 0 ||
+ random_bytes ( context->iv, sizeof ( context->iv ) ) < 0 )
     {
         free ( context );
         return NULL;
@@ -380,8 +387,8 @@ struct io_stream *io_aes_ostream_new ( int fd, const char *password )
 
     context->salt[0] &= 0x0f;
 
-    if ( write_complete ( context->fd, zeros, sizeof ( zeros ) ) < 0
-        || write_complete ( context->fd, context->iv, sizeof ( context->iv ) ) < 0 )
+    if ( write_complete ( context->fd, zeros, sizeof ( zeros ) ) < 0 ||
+ write_complete ( context->fd, context->iv, sizeof ( context->iv ) ) < 0 )
     {
         free ( context );
         return NULL;
@@ -407,8 +414,8 @@ struct io_stream *io_aes_ostream_new ( int fd, const char *password )
 
     mbedtls_md_init ( &context->md_ctx );
 
-    if ( mbedtls_md_setup ( &context->md_ctx, mbedtls_md_info_from_type ( md_type ), 1 ) != 0
-        || mbedtls_md_hmac_starts ( &context->md_ctx, key, sizeof ( key ) ) != 0 )
+    if ( mbedtls_md_setup ( &context->md_ctx, mbedtls_md_info_from_type ( md_type ), 1 ) != 0 ||
+ mbedtls_md_hmac_starts ( &context->md_ctx, key, sizeof ( key ) ) != 0 )
     {
         memset ( key, '\0', sizeof ( key ) );
         memset ( &context->aes, '\0', sizeof ( context->aes ) );
@@ -434,3 +441,4 @@ struct io_stream *io_aes_ostream_new ( int fd, const char *password )
     return io;
 }
 #endif
+

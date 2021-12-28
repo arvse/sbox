@@ -261,8 +261,8 @@ static int sbox_unpack_archive_load ( struct header_t *header, struct ar_istream
     struct unpack_context_t context;
 
     /* Validate header magic field */
-    if ( header->magic[0] != 's' || header->magic[1] != 'b'
-        || header->magic[2] != 'o' || header->magic[3] != 'x' )
+    if ( header->magic[0] != 's' || header->magic[1] != 'b' ||
+        header->magic[2] != 'o' || header->magic[3] != 'x' )
     {
         fprintf ( stderr, "archive not recognized.\n" );
         errno = EINVAL;
@@ -367,7 +367,7 @@ static int sbox_unpack_archive_load ( struct header_t *header, struct ar_istream
     free_files_tree ( root, 0 );
 
     /* Validate archive checksum if needed */
-    if ( !status && ~options & OPTION_LISTONLY)
+    if ( !status && ~options & OPTION_LISTONLY )
     {
         if ( ( verstatus = istream->verify ( istream ) ) == 1 )
         {

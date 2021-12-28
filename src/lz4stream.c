@@ -82,9 +82,8 @@ static int lz4_write ( struct ar_ostream *stream, const void *data, size_t len )
             return -1;
         }
 
-        if ( olen
-            && stream->context->io->write_complete ( stream->context->io, context->output,
-                olen ) < 0 )
+        if ( olen &&
+            stream->context->io->write_complete ( stream->context->io, context->output, olen ) < 0 )
         {
             return -1;
         }
@@ -208,8 +207,8 @@ static int lz4_flush ( struct ar_ostream *stream )
         return -1;
     }
 
-    if ( olen
-        && stream->context->io->write_complete ( stream->context->io, context->output, olen ) < 0 )
+    if ( olen &&
+        stream->context->io->write_complete ( stream->context->io, context->output, olen ) < 0 )
     {
         return -1;
     }

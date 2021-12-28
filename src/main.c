@@ -227,18 +227,21 @@ int main ( int argc, char *argv[] )
             return 1;
         }
         password = argv[2];
-        
-        if (!strcmp(password, "stdin")) {
-            printf("password?\n");
-            if ((len = read(0, password_buf, sizeof(password_buf) -1)) <= 0) {
-                fprintf(stderr, "failed to read password\n");
+
+        if ( !strcmp ( password, "stdin" ) )
+        {
+            printf ( "password?\n" );
+            if ( ( len = read ( 0, password_buf, sizeof ( password_buf ) - 1 ) ) <= 0 )
+            {
+                fprintf ( stderr, "failed to read password\n" );
                 return 1;
             }
-            if (len > 0 && password_buf[len-1] == '\n') {
+            if ( len > 0 && password_buf[len - 1] == '\n' )
+            {
                 len--;
             }
             password_buf[len] = '\0';
-            password=password_buf;
+            password = password_buf;
         }
 
         if ( !check_password ( password ) )
