@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
- * SBox - Simple Data Achive Utility
+ * SBox - Project Config Header
  * ------------------------------------------------------------------ */
 
 #ifndef WIN32_BUILD
@@ -19,8 +19,8 @@
 #include <dirent.h>
 #include <stdlib.h>
 
-#ifndef sbox_CONFIG_H
-#define sbox_CONFIG_H
+#ifndef SBOX_CONFIG_H
+#define SBOX_CONFIG_H
 
 #ifndef ENODATA
 #define ENODATA 61
@@ -30,12 +30,26 @@
 #define UNUSED(x) (void)(x)
 #endif
 
+#ifndef MAX
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+#endif
+
+#ifndef MIN
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#endif
+
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
 
+#ifndef WIN32_BUILD
+#define PATH_SEPARATOR '/'
+#else
+#define PATH_SEPARATOR '\\'
+#endif
+
 #define PATH_LIMIT 2048
 #define WORKBUF_LIMIT 65536
-#define CHUNK 65536
+#define CHUNK_SIZE 65536
 
 #endif

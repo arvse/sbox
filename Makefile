@@ -1,58 +1,67 @@
 # SBox Makefile
-INCLUDES=-I include -D_GNU_SOURCE -DENABLE_LZ4 -DENABLE_ENCRYPTION
+CONFIG=-D_GNU_SOURCE -DENABLE_LZ4 -DENABLE_ENCRYPTION -DENABLE_STDIN_PASSWORD
+INCLUDES=-I include $(CONFIG)
 INDENT_FLAGS=-br -ce -i4 -bl -bli0 -bls -c4 -cdw -ci4 -cs -nbfda -l100 -lp -prs -nlp -nut -nbfde -npsl -nss
 LIBS=-llz4 -lmbedcrypto
 
 OBJS = \
-	release/main.o \
-	release/unpack.o \
-	release/lz4stream.o \
-	release/pack.o \
-	release/stream.o \
-	release/scan.o \
-	release/crc32b.o \
-	release/util.o \
-	release/io.o \
-	release/aes.o
+	bin/main.o \
+	bin/unpack.o \
+	bin/lz4.o \
+	bin/pack.o \
+	bin/stream.o \
+	bin/files.o \
+	bin/util.o \
+	bin/file.o \
+	bin/buffer.o \
+	bin/aes.o
 
 all: host
 
 internal: prepare
 	@echo "  CC    src/aes.c"
-	@$(CC) $(CFLAGS) $(INCLUDES) src/aes.c -o release/aes.o
-	@echo "  CC    src/io.c"
-	@$(CC) $(CFLAGS) $(INCLUDES) src/io.c -o release/io.o
+	@$(CC) $(CFLAGS) $(INCLUDES) src/aes.c -o bin/aes.o
+	@echo "  CC    src/file.c"
+	@$(CC) $(CFLAGS) $(INCLUDES) src/file.c -o bin/file.o
+	@echo "  CC    src/buffer.c"
+	@$(CC) $(CFLAGS) $(INCLUDES) src/buffer.c -o bin/buffer.o
 	@echo "  CC    src/main.c"
-	@$(CC) $(CFLAGS) $(INCLUDES) src/main.c -o release/main.o
+	@$(CC) $(CFLAGS) $(INCLUDES) src/main.c -o bin/main.o
 	@echo "  CC    src/unpack.c"
-	@$(CC) $(CFLAGS) $(INCLUDES) src/unpack.c -o release/unpack.o
-	@echo "  CC    src/lz4stream.c"
-	@$(CC) $(CFLAGS) $(INCLUDES) src/lz4stream.c -o release/lz4stream.o
+	@$(CC) $(CFLAGS) $(INCLUDES) src/unpack.c -o bin/unpack.o
+	@echo "  CC    src/lz4.c"
+	@$(CC) $(CFLAGS) $(INCLUDES) src/lz4.c -o bin/lz4.o
 	@echo "  CC    src/pack.c"
-	@$(CC) $(CFLAGS) $(INCLUDES) src/pack.c -o release/pack.o
+	@$(CC) $(CFLAGS) $(INCLUDES) src/pack.c -o bin/pack.o
 	@echo "  CC    src/stream.c"
-	@$(CC) $(CFLAGS) $(INCLUDES) src/stream.c -o release/stream.o
-	@echo "  CC    src/scan.c"
-	@$(CC) $(CFLAGS) $(INCLUDES) src/scan.c -o release/scan.o
-	@echo "  CC    src/crc32b.c"
-	@$(CC) $(CFLAGS) $(INCLUDES) src/crc32b.c -o release/crc32b.o
+	@$(CC) $(CFLAGS) $(INCLUDES) src/stream.c -o bin/stream.o
+	@echo "  CC    src/files.c"
+	@$(CC) $(CFLAGS) $(INCLUDES) src/files.c -o bin/files.o
 	@echo "  CC    src/util.c"
-	@$(CC) $(CFLAGS) $(INCLUDES) src/util.c -o release/util.o
-	@echo "  LD    release/sbox"
-	@$(LD) -o release/sbox $(OBJS) $(LDFLAGS) $(LIBS)
+	@$(CC) $(CFLAGS) $(INCLUDES) src/util.c -o bin/util.o
+	@echo "  LD    bin/sbox"
+	@$(LD) -o bin/sbox $(OBJS) $(LDFLAGS) $(LIBS)
 
 prepare:
-	@mkdir -p release
+	@mkdir -p bin
 
 host:
 	@make internal \
 		CC=gcc \
 		LD=gcc \
-		CFLAGS='-c -Wall -Wextra -O3 -ffunction-sections -fdata-sections -Wstrict-prototypes' \
-		LDFLAGS='-Wl,--gc-sections -Wl,--relax'
+		CFLAGS='-c -Wall -Wextra -O2 -ffunction-sections -fdata-sections -Wstrict-prototypes' \
+		LDFLAGS='-s -Wl,--gc-sections -Wl,--relax'
+
+indent:
+	@indent $(INDENT_FLAGS) ./*/*.h
+	@indent $(INDENT_FLAGS) ./*/*.c
+	@rm -rf ./*/*~
+
+clean:
+	@rm -rf bin
 
 install:
-	@cp -v release/sbox /usr/bin/sbox
+	@cp -v bin/sbox /usr/bin/sbox
 
 uninstall:
 	@rm -fv /usr/bin/sbox

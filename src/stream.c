@@ -1,183 +1,281 @@
 /* ------------------------------------------------------------------
- * SBox - Simple Data Achive Utility
+ * SBox - Creation of New Streams
  * ------------------------------------------------------------------ */
 
 #include "sbox.h"
 
 /**
- * Open generic output stream
+ * Create new IO stream
  */
-void generic_ostream_open ( struct stream_base_context_t *context, struct io_stream *io )
+struct io_stream_t *io_stream_new ( void )
 {
-    context->io = io;
-}
+    struct io_stream_t *io;
 
-/**
- * Open generic input stream
- */
-void generic_istream_open ( struct stream_base_context_t *context, struct io_stream *io )
-{
-    context->io = io;
-}
-
-/**
- * Archive header host to network byte order change
- */
-static void header_hton ( const struct header_t *header, struct header_t *net_header )
-{
-    memset ( net_header, '\0', sizeof ( struct header_t ) );
-    memcpy ( net_header->magic, header->magic, sizeof ( net_header->magic ) );
-    net_header->comp = htonl ( header->comp );
-    net_header->nentity = htonl ( header->nentity );
-    net_header->nameslen = htonl ( header->nameslen );
-}
-
-/**
- * Archive header network to host byte order change
- */
-static void header_ntoh ( const struct header_t *net_header, struct header_t *header )
-{
-    memset ( header, '\0', sizeof ( struct header_t ) );
-    memcpy ( header->magic, net_header->magic, sizeof ( header->magic ) );
-    header->comp = ntohl ( net_header->comp );
-    header->nentity = ntohl ( net_header->nentity );
-    header->nameslen = ntohl ( net_header->nameslen );
-}
-
-/** 
- * Generic put archive header
- */
-int generic_put_header ( struct ar_ostream *stream, const struct header_t *header )
-{
-    struct header_t net_header;
-
-    header_hton ( header, &net_header );
-
-    if ( stream->context->io->write_complete ( stream->context->io, &net_header,
-            sizeof ( net_header ) ) < 0 )
+    if ( !( io = ( struct io_stream_t * ) calloc ( 1, sizeof ( struct io_stream_t ) ) ) )
     {
-        return -1;
+        return NULL;
+    }
+
+    io->read_complete = stream_read_complete;
+    io->read_max = stream_read_max;
+    io->write_complete = stream_write_complete;
+
+    return io;
+}
+
+/**
+ * Create new input stream
+ */
+struct io_stream_t *input_stream_new ( int fd, const char *password )
+{
+    uint8_t compression;
+    struct io_stream_t *file_stream;
+    struct io_stream_t *storage_stream;
+#ifdef ENABLE_LZ4
+    struct io_stream_t *inflate_stream;
+#endif
+    struct io_stream_t *stream;
+    struct io_stream_t *buffer_stream;
+    unsigned char prefix[ARCHIVE_PREFIX_LENGTH];
+
+    if ( !( file_stream = file_stream_new ( fd ) ) )
+    {
+        return NULL;
+    }
+
+    if ( password )
+    {
+#ifdef ENABLE_ENCRYPTION
+        if ( !( storage_stream = input_aes_stream_new ( file_stream, password ) ) )
+        {
+            file_stream->close ( file_stream );
+            return NULL;
+        }
+#else
+        UNUSED ( password );
+        fprintf ( stderr, "Error: Crypto support not enabled.\n" );
+        file_stream->close ( file_stream );
+        errno = ENOTSUP;
+        return NULL;
+#endif
+    } else
+    {
+        storage_stream = file_stream;
+    }
+
+    if ( storage_stream->read_complete ( storage_stream, prefix, sizeof ( prefix ) ) < 0 )
+    {
+        storage_stream->close ( storage_stream );
+        return NULL;
+    }
+
+    if ( memcmp ( prefix, sbox_archive_prefix, ARCHIVE_PREFIX_LENGTH ) != 0 )
+    {
+        fprintf ( stderr, "Error: Archive not recognized.\n" );
+        storage_stream->close ( storage_stream );
+        errno = EINVAL;
+        return NULL;
+    }
+
+    if ( storage_stream->read_complete ( storage_stream, &compression,
+            sizeof ( compression ) ) < 0 )
+    {
+        storage_stream->close ( storage_stream );
+        return NULL;
+    }
+
+    switch ( compression )
+    {
+    case COMP_NONE:
+        stream = storage_stream;
+        break;
+    case COMP_LZ4:
+#ifdef ENABLE_LZ4
+        if ( !( inflate_stream = input_lz4_stream_new ( storage_stream ) ) )
+        {
+            storage_stream->close ( storage_stream );
+            return NULL;
+        }
+
+        stream = inflate_stream;
+        break;
+#else
+        fprintf ( stderr, "Error: Compression support not enabled.\n" );
+        storage_stream->close ( storage_stream );
+        errno = ENOTSUP;
+        return NULL;
+#endif
+    default:
+        fprintf ( stderr, "Error: Unknown compression mode requested.\n" );
+        storage_stream->close ( storage_stream );
+        errno = ENOTSUP;
+        return NULL;
+    }
+
+    if ( !( buffer_stream = buffer_stream_new ( stream ) ) )
+    {
+        stream->close ( stream );
+        return NULL;
+    }
+
+    return buffer_stream;
+}
+
+/**
+ * Create new output stream
+ */
+struct io_stream_t *output_stream_new ( int fd, const char *password, uint8_t compression,
+    int level )
+{
+    struct io_stream_t *file_stream;
+    struct io_stream_t *storage_stream;
+#ifdef ENABLE_LZ4
+    struct io_stream_t *deflate_stream;
+#endif
+    struct io_stream_t *stream;
+    struct io_stream_t *buffer_stream;
+
+    if ( !( file_stream = file_stream_new ( fd ) ) )
+    {
+        return NULL;
+    }
+
+    if ( password )
+    {
+#ifdef ENABLE_ENCRYPTION
+        if ( !( storage_stream = output_aes_stream_new ( file_stream, password ) ) )
+        {
+            file_stream->close ( file_stream );
+            return NULL;
+        }
+#else
+        UNUSED ( password );
+        fprintf ( stderr, "Error: Crypto support not enabled.\n" );
+        file_stream->close ( file_stream );
+        errno = ENOTSUP;
+        return NULL;
+#endif
+    } else
+    {
+        storage_stream = file_stream;
+    }
+
+    if ( storage_stream->write_complete ( storage_stream, sbox_archive_prefix, sizeof ( sbox_archive_prefix ) ) < 0 )
+    {
+        storage_stream->close ( storage_stream );
+        return NULL;
+    }
+    
+    if ( storage_stream->write_complete ( storage_stream, &compression,
+            sizeof ( compression ) ) < 0 )
+    {
+        storage_stream->close ( storage_stream );
+        return NULL;
+    }
+
+    switch ( compression )
+    {
+    case COMP_NONE:
+        stream = storage_stream;
+        break;
+    case COMP_LZ4:
+#ifdef ENABLE_LZ4
+        if ( !( deflate_stream = output_lz4_stream_new ( storage_stream, level ) ) )
+        {
+            storage_stream->close ( storage_stream );
+            return NULL;
+        }
+
+        stream = deflate_stream;
+        break;
+#else
+        UNUSED ( level );
+        fprintf ( stderr, "Error: Compression support not enabled.\n" );
+        storage_stream->close ( storage_stream );
+        errno = ENOTSUP;
+        return NULL;
+#endif
+    default:
+        fprintf ( stderr, "Error: Unknown compression mode requested.\n" );
+        storage_stream->close ( storage_stream );
+        errno = ENOTSUP;
+        return NULL;
+    }
+
+    if ( !( buffer_stream = buffer_stream_new ( stream ) ) )
+    {
+        stream->close ( stream );
+        return NULL;
+    }
+
+    return buffer_stream;
+}
+
+/**
+ * Read complete data chunk from stream
+ */
+int stream_read_complete ( struct io_stream_t *io, void *mem, size_t total )
+{
+    size_t len;
+    size_t sum;
+
+    for ( sum = 0; sum < total; sum += len )
+    {
+        if ( ( ssize_t ) ( len = io->read ( io, ( uint8_t * ) mem + sum, total - sum ) ) < 0 )
+        {
+            return -1;
+        }
+
+        if ( !len )
+        {
+            errno = ENODATA;
+            return -1;
+        }
     }
 
     return 0;
 }
 
-/** 
- * Generic get archive header
+/**
+ * Read longest data chunk from stream
  */
-int generic_get_header ( struct ar_istream *stream, struct header_t *header )
+ssize_t stream_read_max ( struct io_stream_t *io, void *mem, size_t total )
 {
-    struct header_t net_header;
+    size_t len;
+    size_t sum;
 
-    if ( stream->context->io->read_complete ( stream->context->io, &net_header,
-            sizeof ( net_header ) ) < 0 )
+    for ( sum = 0; sum < total; sum += len )
     {
-        return -1;
+        if ( ( ssize_t ) ( len = io->read ( io, ( uint8_t * ) mem + sum, total - sum ) ) < 0 )
+        {
+            return -1;
+        }
+
+        if ( !len )
+        {
+            break;
+        }
     }
 
-    header_ntoh ( &net_header, header );
+    return sum;
+}
+
+/**
+ * Write complete data chunk to stream
+ */
+int stream_write_complete ( struct io_stream_t *io, const void *mem, size_t total )
+{
+    size_t len;
+    size_t sum;
+
+    for ( sum = 0; sum < total; sum += len )
+    {
+        if ( ( ssize_t ) ( len =
+                io->write ( io, ( const uint8_t * ) mem + sum, total - sum ) ) <= 0 )
+        {
+            return -1;
+        }
+    }
 
     return 0;
-}
-
-/**
- * Write data to output stream
- */
-int generic_write ( struct ar_ostream *stream, const void *data, size_t len )
-{
-    return stream->context->io->write_complete ( stream->context->io, data, len );
-}
-
-/**
- * Read data from input stream
- */
-int generic_read ( struct ar_istream *stream, void *data, size_t len )
-{
-    return stream->context->io->read_complete ( stream->context->io, data, len );
-}
-
-/**
- * Verify full content read from input stream
- */
-int generic_verify ( struct ar_istream *stream )
-{
-    return stream->context->io->verify ( stream->context->io );
-}
-
-/*
- * Finalize output stream
- */
-int generic_flush ( struct ar_ostream *stream )
-{
-    return stream->context->io->flush ( stream->context->io );
-}
-
-/*
- * Close stream
- */
-void generic_close ( struct ar_stream *stream )
-{
-    if ( stream )
-    {
-        free ( stream->context );
-        free ( stream );
-    }
-}
-
-/**
- * Open plain output stream
- */
-struct ar_ostream *plain_ostream_open ( struct io_stream *io )
-{
-    struct ar_ostream *stream;
-
-    if ( !( stream = ( struct ar_ostream * ) calloc ( 1, sizeof ( struct ar_ostream ) ) ) )
-    {
-        return NULL;
-    }
-
-    if ( !( stream->context =
-            ( struct stream_base_context_t * ) malloc ( sizeof ( struct
-                    stream_base_context_t ) ) ) )
-    {
-        free ( stream );
-        return NULL;
-    }
-
-    stream->put_header = generic_put_header;
-    stream->write = generic_write;
-    stream->flush = generic_flush;
-    stream->close = ( void ( * )( struct ar_ostream * ) ) generic_close;
-    generic_ostream_open ( stream->context, io );
-
-    return stream;
-}
-
-/**
- * Open plain input stream
- */
-struct ar_istream *plain_istream_open ( struct io_stream *io )
-{
-    struct ar_istream *stream;
-
-    if ( !( stream = ( struct ar_istream * ) calloc ( 1, sizeof ( struct ar_istream ) ) ) )
-    {
-        return NULL;
-    }
-
-    if ( !( stream->context =
-            ( struct stream_base_context_t * ) calloc ( 1, sizeof ( struct
-                    stream_base_context_t ) ) ) )
-    {
-        free ( stream );
-        return NULL;
-    }
-
-    stream->get_header = generic_get_header;
-    stream->read = generic_read;
-    stream->verify = generic_verify;
-    stream->close = ( void ( * )( struct ar_istream * ) ) generic_close;
-    generic_istream_open ( stream->context, io );
-
-    return stream;
 }
