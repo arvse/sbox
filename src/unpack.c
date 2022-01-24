@@ -180,7 +180,7 @@ int sbox_unpack_archive ( const char *archive, uint32_t options, const char *pas
     free ( iter_context );
     free_file_net ( root );
 
-    if ( ~options & OPTION_LISTONLY )
+    if ( password && ~options & OPTION_LISTONLY )
     {
         if ( io->verify ( io ) < 0 )
         {
