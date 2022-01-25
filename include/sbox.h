@@ -15,10 +15,9 @@
 #define ARCHIVE_PREFIX_LENGTH 4
 
 #define OPTION_VERBOSE 1
-#define OPTION_NOPATHS 2
-#define OPTION_LISTONLY 4
-#define OPTION_TESTONLY 8
-#define OPTION_LZ4 16
+#define OPTION_LISTONLY 2
+#define OPTION_TESTONLY 4
+#define OPTION_LZ4 8
 
 /**
  * SBox Archive Node

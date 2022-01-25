@@ -16,7 +16,6 @@ static void show_usage ( void )
         "options:\n"
         "  -c    create new archive\n"
         "  -x    extract archive\n"
-        "  -e    extract archive, no paths\n"
         "  -l    list only files in archive\n"
         "  -t    test archive checksum\n"
         "  -h    show help message\n"
@@ -142,7 +141,7 @@ static int parse_compression_level ( char *input )
 }
 #endif
 
-/** 
+/**
  * Check if flag is set in the options string
  */
 static int check_flag ( const char *options, char flag )
@@ -212,7 +211,6 @@ int main ( int argc, char *argv[] )
     int arg_off;
     int flag_c;
     int flag_x;
-    int flag_e;
     int flag_l;
     int flag_t;
     int flag_s;
@@ -233,7 +231,6 @@ int main ( int argc, char *argv[] )
     /* Parse flags from arguments */
     flag_c = check_flag ( argv[1], 'c' );
     flag_x = check_flag ( argv[1], 'x' );
-    flag_e = check_flag ( argv[1], 'e' );
     flag_l = check_flag ( argv[1], 'l' );
     flag_t = check_flag ( argv[1], 't' );
     flag_s = check_flag ( argv[1], 's' );
@@ -244,7 +241,7 @@ int main ( int argc, char *argv[] )
     arg_off = !!flag_p;
 
     /* Tasks are exclusive */
-    if ( flag_c + flag_x + flag_e + flag_l + flag_t != 1 )
+    if ( flag_c + flag_x + flag_l + flag_t != 1 )
     {
         show_usage (  );
         return 1;
@@ -266,12 +263,6 @@ int main ( int argc, char *argv[] )
     if ( flag_t )
     {
         options |= OPTION_TESTONLY;
-    }
-
-    /* Set no paths option if needed */
-    if ( flag_e )
-    {
-        options |= OPTION_NOPATHS;
     }
 
     /* Unset lz4 compression if needed */
@@ -334,9 +325,9 @@ int main ( int argc, char *argv[] )
             ( const char ** ) ( argv + arg_off + 3 ) );
 
 #endif
-    } else if ( flag_x || flag_e || flag_l || flag_t )
+    } else if ( flag_x || flag_l || flag_t )
     {
-        if ( argc < arg_off + 3 )
+        if ( argc != arg_off + 3 )
         {
             show_usage (  );
             return 1;

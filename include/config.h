@@ -2,11 +2,7 @@
  * SBox - Project Config Header
  * ------------------------------------------------------------------ */
 
-#ifndef WIN32_BUILD
 #include <arpa/inet.h>
-#else
-#include <windows.h>
-#endif
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -40,12 +36,6 @@
 
 #ifndef O_BINARY
 #define O_BINARY 0
-#endif
-
-#ifndef WIN32_BUILD
-#define PATH_SEPARATOR '/'
-#else
-#define PATH_SEPARATOR '\\'
 #endif
 
 #define PATH_LIMIT 2048

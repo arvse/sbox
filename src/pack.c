@@ -92,7 +92,7 @@ int sbox_pack_callback ( void *context, struct sbox_node_t *node, const char *pa
     return 0;
 }
 
-/** 
+/**
  * Pack files to an archive
  */
 int sbox_pack_archive ( const char *archive, uint32_t options, int level, const char *password,
@@ -126,11 +126,9 @@ int sbox_pack_archive ( const char *archive, uint32_t options, int level, const 
 
     if ( !( root = build_file_net ( files ) ) )
     {
-        free_file_net ( root );
         io->close ( io );
         return -1;
     }
-
 
     if ( file_net_save ( root, io ) < 0 )
     {

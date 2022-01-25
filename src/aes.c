@@ -16,7 +16,7 @@
 #define AES256_BLOCKLEN 16
 #define SHA256_BLOCKLEN 32
 #define DERIVE_N_ROUNDS 10000
-#define NONE_LEN (16 * AES256_BLOCKLEN)
+#define NONCE_LEN (16 * AES256_BLOCKLEN)
 
 /**
  * AES stream context
@@ -464,7 +464,9 @@ static int aes_stream_flush ( struct io_stream_t *io )
  */
 static void aes_stream_close ( struct io_stream_t *io )
 {
-    struct aes_stream_context_t *context = ( struct aes_stream_context_t * ) io->context;
+    struct aes_stream_context_t *context;
+
+    context = ( struct aes_stream_context_t * ) io->context;
 
     mbedtls_aes_free ( &context->aes );
     mbedtls_md_free ( &context->md_ctx );
@@ -482,7 +484,7 @@ struct io_stream_t *input_aes_stream_new ( struct io_stream_t *internal, const c
     mbedtls_md_type_t md_type = MBEDTLS_MD_SHA256;
     uint8_t ekey[AES256_KEYLEN];
     uint8_t hkey[AES256_KEYLEN];
-    uint8_t nonce[NONE_LEN];
+    uint8_t nonce[NONCE_LEN];
 
     if ( !( context =
             ( struct aes_stream_context_t * ) malloc ( sizeof ( struct aes_stream_context_t ) ) ) )
@@ -613,7 +615,7 @@ struct io_stream_t *output_aes_stream_new ( struct io_stream_t *internal, const 
     mbedtls_md_type_t md_type = MBEDTLS_MD_SHA256;
     uint8_t ekey[AES256_KEYLEN];
     uint8_t hkey[AES256_KEYLEN];
-    uint8_t nonce[NONE_LEN];
+    uint8_t nonce[NONCE_LEN];
 
     if ( !( context =
             ( struct aes_stream_context_t * ) malloc ( sizeof ( struct aes_stream_context_t ) ) ) )

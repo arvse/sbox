@@ -85,7 +85,7 @@ static int name_stack_push ( struct name_stack_t *stack, const char *name )
 
     if ( stack->path[0] )
     {
-        stack->path[stack->path_len++] = PATH_SEPARATOR;
+        stack->path[stack->path_len++] = '/';
     }
 
     memcpy ( stack->path + stack->path_len, name, name_len + 1 );
@@ -241,7 +241,7 @@ static const char *file_net_get_basename ( const char *path )
     do
     {
         backup = ptr;
-        ptr = strchr ( ptr, PATH_SEPARATOR );
+        ptr = strchr ( ptr, '/' );
         if ( ptr )
         {
             ptr++;
@@ -510,6 +510,11 @@ static int file_net_save_in ( struct sbox_node_t *node, struct io_stream_t *io )
 
     basename = file_net_get_basename ( node->name );
 
+    if ( !*basename || !strcmp ( basename, ".." ) )
+    {
+        basename = ".";
+    }
+
     if ( io->write_complete ( io, basename, strlen ( basename ) + 1 ) < 0 )
     {
         return -1;
@@ -610,6 +615,7 @@ struct sbox_node_t *file_net_load_in ( struct io_stream_t *io, struct ext_buffer
     uint8_t byte;
     uint32_t net_mode;
     uint32_t net_size;
+    char *name;
     struct sbox_node_t *node;
     struct sbox_node_t *child;
 
@@ -651,7 +657,18 @@ struct sbox_node_t *file_net_load_in ( struct io_stream_t *io, struct ext_buffer
 
     } while ( byte );
 
-    if ( !( node = sbox_node_new ( ( char * ) buffer->bytes ) ) )
+    name = ( char * ) buffer->bytes;
+
+    if ( !strcmp ( name, ".." ) || strchr ( name, '/' ) )
+    {
+        node = sbox_node_new ( "_name_restricted_" );
+
+    } else
+    {
+        node = sbox_node_new ( name );
+    }
+
+    if ( !node )
     {
         return NULL;
     }

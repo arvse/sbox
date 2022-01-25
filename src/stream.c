@@ -160,12 +160,13 @@ struct io_stream_t *output_stream_new ( int fd, const char *password, uint8_t co
         storage_stream = file_stream;
     }
 
-    if ( storage_stream->write_complete ( storage_stream, sbox_archive_prefix, sizeof ( sbox_archive_prefix ) ) < 0 )
+    if ( storage_stream->write_complete ( storage_stream, sbox_archive_prefix,
+            sizeof ( sbox_archive_prefix ) ) < 0 )
     {
         storage_stream->close ( storage_stream );
         return NULL;
     }
-    
+
     if ( storage_stream->write_complete ( storage_stream, &compression,
             sizeof ( compression ) ) < 0 )
     {

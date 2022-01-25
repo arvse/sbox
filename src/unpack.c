@@ -108,13 +108,13 @@ int sbox_unpack_callback ( void *context, struct sbox_node_t *node, const char *
 
     if ( iter_context->options & OPTION_VERBOSE )
     {
-        show_progress ( iter_context->options & OPTION_NOPATHS ? 'e' : 'x', path );
+        show_progress ( 'x', path );
     }
 
     return 0;
 }
 
-/** 
+/**
  * Unpack files from an archive
  */
 int sbox_unpack_archive ( const char *archive, uint32_t options, const char *password )

@@ -15,4 +15,4 @@ void show_progress ( char action, const char *path )
 /**
  * SBox archive prefix
  */
-const unsigned char sbox_archive_prefix[ARCHIVE_PREFIX_LENGTH] = { 's', 'b', 'o', 'x' };
+const uint8_t sbox_archive_prefix[ARCHIVE_PREFIX_LENGTH] = { 's', 'b', 'o', 'x' };
