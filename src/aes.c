@@ -388,7 +388,7 @@ static int aes_stream_verify ( struct io_stream_t *io )
 
     context = ( struct aes_stream_context_t * ) io->context;
 
-    if ( !context->eof )
+    while ( !context->eof )
     {
         if ( aes_stream_read ( io, temp, sizeof ( temp ) ) < 0 )
         {

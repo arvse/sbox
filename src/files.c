@@ -510,7 +510,7 @@ static int file_net_save_in ( struct sbox_node_t *node, struct io_stream_t *io )
 
     basename = file_net_get_basename ( node->name );
 
-    if ( !*basename || !strcmp ( basename, ".." ) )
+    if ( !*basename || strchr(basename, '/') || !strcmp( basename, ".." ) )
     {
         basename = ".";
     }
