@@ -105,14 +105,12 @@ static int check_password ( const char *password )
 #ifndef EXTRACT_ONLY
 static int parse_compression_level ( char *input )
 {
-    char c = '\0';
-
-    if ( strlen ( input ) == 1 )
+    while ( *input && !isdigit ( *input ) )
     {
-        c = input[0];
+        input++;
     }
 
-    switch ( c )
+    switch ( *input )
     {
     case '0':
         return 0;

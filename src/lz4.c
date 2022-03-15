@@ -278,15 +278,6 @@ struct io_stream_t *output_lz4_stream_new ( struct io_stream_t *internal, int le
     struct io_stream_t *io;
     struct lz4_stream_context_t *context;
 
-    LZ4F_preferences_t lz4_prefs = {
-        {LZ4F_max256KB, LZ4F_blockLinked, LZ4F_noContentChecksum, LZ4F_frame,
-            0 /* unknown content size */ , 0 /* no dictID */ , /* LZ4F_noBlockChecksum */ 0},
-        level,  /* compression level; 0 == default */
-        0,      /* autoflush */
-        0,      /* favor decompression speed */
-        {0, 0, 0},      /* reserved, must be set to 0 */
-    };
-
     if ( !( context =
             ( struct lz4_stream_context_t * ) calloc ( 1, sizeof ( struct
                     lz4_stream_context_t ) ) ) )
@@ -297,7 +288,8 @@ struct io_stream_t *output_lz4_stream_new ( struct io_stream_t *internal, int le
     /* Initialize stream context */
     context->begin_flag = 1;
     context->internal = internal;
-    memcpy ( &context->lz4_prefs, &lz4_prefs, sizeof ( LZ4F_preferences_t ) );
+    memset ( &context->lz4_prefs, 0, sizeof ( context->lz4_prefs ) );
+    context->lz4_prefs.compressionLevel = level;
 
     /* Prepare LZ4 compression context */
     if ( LZ4F_isError ( LZ4F_createCompressionContext ( &context->lz4_ctx, LZ4F_VERSION ) ) )
